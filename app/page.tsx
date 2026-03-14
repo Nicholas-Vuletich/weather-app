@@ -4,6 +4,7 @@ import Navbar from "@/components/Navbar";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { format } from "date-fns";
+import Container from "@/components/Container";
 
 export interface WeatherResponse {
   coord: {
@@ -71,7 +72,7 @@ export default function Home() {
               <p>{format(date, "EEEE")}</p>
               <p className="text-lg">{format(date, "dd.MM.yyyy")}</p>
             </h2>
-          <div></div>
+            <Container></Container>
           </div>
         </section>
 
