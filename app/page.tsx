@@ -72,7 +72,11 @@ export default function Home() {
               <p>{format(date, "EEEE")}</p>
               <p className="text-lg">{format(date, "dd.MM.yyyy")}</p>
             </h2>
-            <Container></Container>
+            <Container className="gap-10 px-6 items-center">
+
+            <div className="flex flex-col px-4"></div>
+
+            </Container>
           </div>
         </section>
 
