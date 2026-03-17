@@ -1,86 +1,112 @@
 'use client';
 
 import Navbar from "@/components/Navbar";
-import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
-import { format } from "date-fns";
 import Container from "@/components/Container";
 
-export interface WeatherResponse {
-  coord: {
-    lon: number;
-    lat: number;
-  };
-  weather: {
-    id: number;
-    main: string;
-    description: string;
-    icon: string;
+import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
+
+import { format, parseISO } from "date-fns";
+
+
+// ⭐ TIP ZA FORECAST API
+export interface ForecastResponse {
+  list: {
+    dt: number;
+    main: {
+      temp: number;
+      temp_min: number;
+      temp_max: number;
+    };
+    weather: {
+      description: string;
+      icon: string;
+    }[];
+    dt_txt: string;
   }[];
-  base: string;
-  main: {
-    temp: number;
-    feels_like: number;
-    temp_min: number;
-    temp_max: number;
-    pressure: number;
-    humidity: number;
-  };
-  visibility: number;
-  wind: {
-    speed: number;
-    deg: number;
-  };
-  clouds: {
-    all: number;
-  };
-  dt: number;
-  sys: {
-    country: string;
-    sunrise: number;
-    sunset: number;
-  };
-  timezone: number;
-  id: number;
-  name: string;
-  cod: number;
 }
 
+
 export default function Home() {
-  const { isPending, error, data } = useQuery<WeatherResponse>({
-    queryKey: ["weather", "pune"],
+
+  const { isPending, error, data } = useQuery<ForecastResponse>({
+    queryKey: ["weather", "osijek"],
+
     queryFn: async () => {
-      const url = `https://api.openweathermap.org/data/2.5/weather?q=pune&appid=${process.env.NEXT_PUBLIC_WEATHER_KEY}&units=metric`;
-      const response = await axios.get<WeatherResponse>(url);
+      const url =
+        `https://api.openweathermap.org/data/2.5/forecast?q=Osijek,hr&appid=${process.env.NEXT_PUBLIC_WEATHER_KEY}&units=metric`;
+
+      const response = await axios.get<ForecastResponse>(url);
       return response.data;
     },
   });
 
+
   if (isPending) return <div>Loading...</div>;
   if (error) return <div>Error loading weather</div>;
+  if (!data) return null;
 
-  const date = new Date(data.dt * 1000);
+
+  // ⭐ Uzmemo prvi element (najbliži trenutnom vremenu)
+  const firstData = data.list[0];
+
+  const date = new Date(firstData.dt * 1000);
+
 
   return (
     <div className="flex flex-col gap-4 bg-gray-100 min-h-screen">
       <Navbar />
 
       <main className="px-3 max-w-7xl mx-auto flex flex-col gap-9 w-full pb-10 pt-4">
+
         <section>
           <div>
+
+            {/* DATUM */}
             <h2 className="flex gap-2 text-2xl items-end">
               <p>{format(date, "EEEE")}</p>
               <p className="text-lg">{format(date, "dd.MM.yyyy")}</p>
             </h2>
+
+
             <Container className="gap-10 px-6 items-center">
 
-            <div className="flex flex-col px-4"></div>
+              {/* TEMPERATURA */}
+              <div className="flex flex-col px-4">
+
+                <span className="text-5xl">
+                  {Math.round(firstData.main.temp)}°
+                </span>
+
+                <p className="text-xs space-x-2">
+                  <span>{Math.round(firstData.main.temp_min)}°↓</span>
+                  <span>{Math.round(firstData.main.temp_max)}°↑</span>
+                </p>
+
+              </div>
+
+
+              {/* SATNA PROGNOZA */}
+              <div className="flex gap-10 sm:gap-16 overflow-x-auto w-full justify-between pr-3">
+
+                {data.list.slice(0, 8).map((d, i) => (
+                  <div
+                    key={i}
+                    className="flex flex-col justify-between gap-2 items-center text-xs font-semibold"
+                  >
+                    <p>{format(parseISO(d.dt_txt), "HH:mm")}</p>
+
+                    <p>{Math.round(d.main.temp)}°</p>
+                  </div>
+                ))}
+
+              </div>
 
             </Container>
+
           </div>
         </section>
 
-        <section></section>
       </main>
     </div>
   );
