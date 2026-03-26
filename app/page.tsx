@@ -7,6 +7,8 @@ import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 
 import { format, parseISO } from "date-fns";
+import WeatherIcon from "@/components/WeatherIcon";
+import { getDayOrNightIcon } from "@/utilis/getDayOrNightIcon";
 
 
 // ⭐ TIP ZA FORECAST API
@@ -96,6 +98,9 @@ export default function Home() {
                   >
                     <p>{format(parseISO(d.dt_txt), "HH:mm")}</p>
 
+                    <p className="whitespace-nowrap">{Math.round(d.main.temp)}°</p>
+
+                    <WeatherIcon iconName={getDayOrNightIcon(d.weather[0].icon, d.dt_txt)} />
                     <p>{Math.round(d.main.temp)}°</p>
                   </div>
                 ))}
