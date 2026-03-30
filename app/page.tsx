@@ -9,9 +9,9 @@ import axios from "axios";
 import { format, parseISO } from "date-fns";
 import WeatherIcon from "@/components/WeatherIcon";
 import { getDayOrNightIcon } from "@/utilis/getDayOrNightIcon";
+import WeatherDetails from "@/components/WeatherDetails";
+import { metersToKilometers } from "@/utilis/metersToKilometers";
 
-
-// ⭐ TIP ZA FORECAST API
 export interface ForecastResponse {
   list: {
     dt: number;
@@ -19,6 +19,12 @@ export interface ForecastResponse {
       temp: number;
       temp_min: number;
       temp_max: number;
+      pressure: number;
+      humidity: number;
+    };
+    visibility: number;
+    wind: {
+      speed: number;
     };
     weather: {
       description: string;
@@ -27,7 +33,6 @@ export interface ForecastResponse {
     dt_txt: string;
   }[];
 }
-
 
 export default function Home() {
 
@@ -43,17 +48,13 @@ export default function Home() {
     },
   });
 
-
   if (isPending) return <div>Loading...</div>;
   if (error) return <div>Error loading weather</div>;
   if (!data) return null;
 
-
-  // ⭐ Uzmemo prvi element (najbliži trenutnom vremenu)
   const firstData = data.list[0];
 
   const date = new Date(firstData.dt * 1000);
-
 
   return (
     <div className="flex flex-col gap-4 bg-gray-100 min-h-screen">
@@ -64,18 +65,14 @@ export default function Home() {
         <section>
           <div>
 
-            {/* DATUM */}
             <h2 className="flex gap-2 text-2xl items-end">
               <p>{format(date, "EEEE")}</p>
               <p className="text-lg">{format(date, "dd.MM.yyyy")}</p>
             </h2>
 
-
             <Container className="gap-10 px-6 items-center">
 
-              {/* TEMPERATURA */}
               <div className="flex flex-col px-4">
-
                 <span className="text-5xl">
                   {Math.round(firstData.main.temp)}°
                 </span>
@@ -84,11 +81,8 @@ export default function Home() {
                   <span>{Math.round(firstData.main.temp_min)}°↓</span>
                   <span>{Math.round(firstData.main.temp_max)}°↑</span>
                 </p>
-
               </div>
 
-
-              {/* SATNA PROGNOZA */}
               <div className="flex gap-10 sm:gap-16 overflow-x-auto w-full justify-between pr-3">
 
                 {data.list.slice(0, 8).map((d, i) => (
@@ -98,10 +92,11 @@ export default function Home() {
                   >
                     <p>{format(parseISO(d.dt_txt), "HH:mm")}</p>
 
-                    <p className="whitespace-nowrap">{Math.round(d.main.temp)}°</p>
-
                     <WeatherIcon iconName={getDayOrNightIcon(d.weather[0].icon, d.dt_txt)} />
-                    <p>{Math.round(d.main.temp)}°</p>
+
+                    <p className="whitespace-nowrap">
+                      {Math.round(d.main.temp)}°
+                    </p>
                   </div>
                 ))}
 
@@ -110,6 +105,44 @@ export default function Home() {
             </Container>
 
           </div>
+
+          <div className="flex gap-4">
+
+            {/* left */}
+            <Container className="w-fit justify-center flex-col px-4 items-center">
+
+              <p className="capitalize text-center">
+                {firstData.weather[0].description}
+              </p>
+
+              <WeatherIcon
+                iconName={getDayOrNightIcon(
+                  firstData.weather[0].icon ?? "",
+                  firstData.dt_txt ?? ""
+                )}
+              />
+
+            </Container>
+
+            {/* right */}
+            <Container className="bg-yellow-300/80 px-6 gap-4 justify-between overflow-x-auto">
+
+              <WeatherDetails
+                visibility={metersToKilometers(firstData.visibility ?? 10000)}
+                humidity={`${firstData.main.humidity}%`}
+                windSpeed={`${firstData.wind.speed} m/s`}
+                airPressure={`${firstData.main.pressure} hPa`}
+                sunrise="--"
+                sunset="--"
+              />
+
+            </Container>
+
+          </div>
+        </section>
+
+        <section className="flex w-full flex-col gap-4">
+          <p className="text-2xl">Forecast (7 days)</p>
         </section>
 
       </main>
