@@ -6,7 +6,7 @@ import Container from "@/components/Container";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 
-import { format, parseISO } from "date-fns";
+import { format, parseISO, fromUnixTime } from "date-fns";
 import WeatherIcon from "@/components/WeatherIcon";
 import { getDayOrNightIcon } from "@/utilis/getDayOrNightIcon";
 import WeatherDetails from "@/components/WeatherDetails";
@@ -132,8 +132,8 @@ export default function Home() {
                 humidity={`${firstData.main.humidity}%`}
                 windSpeed={`${firstData.wind.speed} m/s`}
                 airPressure={`${firstData.main.pressure} hPa`}
-                sunrise="--"
-                sunset="--"
+                sunrise={format(fromUnixTime(data.city.sunrise), "H:mm")}
+                sunset={format(fromUnixTime(data?.city.sunset), "H:mm")}
               />
 
             </Container>
