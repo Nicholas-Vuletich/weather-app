@@ -4,7 +4,7 @@ import { FiDroplet } from "react-icons/fi"
 import { MdAir } from "react-icons/md"
 import { ImMeter } from "react-icons/im"
 
-export interface WeatherDetailProps {
+export interface WeatherDetailProps  {
   visibility: string
   humidity: string
   windSpeed: string
