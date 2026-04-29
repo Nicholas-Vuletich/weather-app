@@ -1,9 +1,11 @@
-'use client'
+'use client';
 
 import React, { useState } from "react";
 import axios from "axios";
 import { MdWbSunny, MdMyLocation, MdOutlineLocationOn } from "react-icons/md";
 import SearchBox from "./SearchBox";
+import { useAtom } from "jotai";
+import { placeAtom } from "@/app/atom";
 
 type Props = {
   location?: string;
@@ -11,36 +13,42 @@ type Props = {
 
 const API_KEY = process.env.NEXT_PUBLIC_WEATHER_KEY;
 
-export default function Navbar({ location }: Props) {
+type ApiResponse = {
+  list: {
+    name: string;
+  }[];
+};
 
+export default function Navbar({ location }: Props) {
   const [city, setCity] = useState("");
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [error, setError] = useState("");
 
-  async function handleInputChange(value: string) {
+  const [place, setPlace] = useAtom(placeAtom);
 
+  async function handleInputChange(value: string) {
     setCity(value);
 
     if (value.length >= 3) {
       try {
+        if (!API_KEY) return;
 
-        const response = await axios.get(
+        const response = await axios.get<ApiResponse>(
           `https://api.openweathermap.org/data/2.5/find?q=${value}&appid=${API_KEY}`
         );
 
-        const suggestionList = response.data.list.map((item: any) => item.name);
+        const suggestionList: string[] = [
+          ...new Set(response.data.list.map((item) => item.name)),
+        ];
 
         setSuggestions(suggestionList);
         setShowSuggestions(true);
         setError("");
-
       } catch (err) {
-
         setSuggestions([]);
         setShowSuggestions(true);
         setError("City not found");
-
       }
     } else {
       setSuggestions([]);
@@ -51,12 +59,24 @@ export default function Navbar({ location }: Props) {
 
   function handleSuggestionClick(value: string) {
     setCity(value);
+    setPlace(value);
     setShowSuggestions(false);
+  }
+
+  function handleSubmitSearch(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+
+    if (suggestions.length === 0) {
+      setError("Location not found");
+    } else {
+      setError("");
+      setPlace(city);
+      setShowSuggestions(false);
+    }
   }
 
   return (
     <nav className="shadow-sm sticky top-0 left-0 z-50 bg-white">
-
       <div className="h-[80px] w-full flex justify-between items-center max-w-7xl px-3 mx-auto">
 
         {/* Logo */}
@@ -67,21 +87,20 @@ export default function Navbar({ location }: Props) {
 
         {/* Location + Search */}
         <section className="flex gap-4 items-center">
-
-          <button>
+          <button type="button">
             <MdMyLocation className="text-2xl text-gray-400 hover:opacity-80" />
           </button>
 
           <MdOutlineLocationOn className="text-3xl" />
 
           <p className="text-slate-900/80 text-sm">
-            {location ?? "Unknown"}
+            {location ?? place ?? "Unknown"}
           </p>
 
           <div className="relative">
-
             <SearchBox
               value={city}
+              onSubmit={handleSubmitSearch}
               onChange={(e) => handleInputChange(e.target.value)}
             />
 
@@ -92,13 +111,9 @@ export default function Navbar({ location }: Props) {
                 error={error}
               />
             )}
-
           </div>
-
         </section>
-
       </div>
-
     </nav>
   );
 }
@@ -110,7 +125,6 @@ type SuggestionBoxProps = {
 };
 
 function SuggestionBox({ suggestions, onClick, error }: SuggestionBoxProps) {
-
   return (
     <ul className="mb-4 bg-white absolute border top-[44px] left-0 border-gray-300 rounded-md min-w-[200px] flex flex-col gap-1 py-2 px-2">
 
@@ -120,14 +134,13 @@ function SuggestionBox({ suggestions, onClick, error }: SuggestionBoxProps) {
 
       {suggestions.map((city, index) => (
         <li
-          key={index}
+          key={`${city}-${index}`}
           onClick={() => onClick(city)}
           className="cursor-pointer hover:bg-gray-200 px-2 py-1 rounded"
         >
           {city}
         </li>
       ))}
-
     </ul>
   );
 }

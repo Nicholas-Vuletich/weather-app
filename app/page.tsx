@@ -14,6 +14,9 @@ import WeatherDetails from "@/components/WeatherDetails";
 import { metersToKilometers } from "@/utilis/metersToKilometers";
 import { convertWindSpeed } from "@/utilis/convertWindSpeed";
 
+import { useAtom } from "jotai";
+import { placeAtom } from "./atom";
+
 export interface ForecastResponse {
   city: {
     sunrise: number;
@@ -45,14 +48,16 @@ export interface ForecastResponse {
 }
 
 export default function Home() {
+  const [place] = useAtom(placeAtom);
 
   const { isLoading, error, data } = useQuery<ForecastResponse>({
-    queryKey: ["weather", "osijek"],
+    queryKey: ["weather", place],
     queryFn: async () => {
-      const url = `https://api.openweathermap.org/data/2.5/forecast?q=Osijek,hr&appid=${process.env.NEXT_PUBLIC_WEATHER_KEY}&units=metric`;
+      const url = `https://api.openweathermap.org/data/2.5/forecast?q=${place}&appid=${process.env.NEXT_PUBLIC_WEATHER_KEY}&units=metric`;
       const response = await axios.get<ForecastResponse>(url);
       return response.data;
     },
+    enabled: !!place,
   });
 
   if (isLoading)
@@ -87,7 +92,7 @@ export default function Home() {
 
   return (
     <div className="flex flex-col gap-4 bg-gray-100 min-h-screen">
-      <Navbar />
+      <Navbar location={data.city.name} />
 
       <main className="px-3 max-w-7xl mx-auto flex flex-col gap-9 w-full pb-10 pt-4">
 
@@ -169,6 +174,7 @@ export default function Home() {
             d ? (
               <ForecastWeatherDetail
                 key={i}
+                weatherIcon={d.weather[0].icon}
                 description={d.weather[0].description}
                 date={format(parseISO(d.dt_txt), "dd.MM")}
                 day={format(parseISO(d.dt_txt), "EEEE")}
@@ -182,7 +188,7 @@ export default function Home() {
                 sunset={format(fromUnixTime(data.city.sunset), "H:mm")}
                 visibility={`${metersToKilometers(d.visibility)}`}
                 windSpeed={convertWindSpeed(d.wind.speed)}
-              />
+/>
             ) : null
           )}
 
